@@ -30,8 +30,10 @@
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -75,8 +77,14 @@ public class OpMode_Linear extends LinearOpMode {
     //1
     private DcMotor backRightDrive = null;
     //0
+    private DcMotor lift1 = null;
+    private DcMotor rightOutTake = null;
+    private DcMotor leftOutTake = null;
+    private DcMotor lift2 = null;
+    private CRServo kicker =null;
+    private CRServo intake = null;
 
-    private DcMotor inTake = null;
+
     //Exansion 0
     @Override
     public void runOpMode() {
@@ -87,8 +95,14 @@ public class OpMode_Linear extends LinearOpMode {
         backLeftDrive = hardwareMap.get(DcMotor.class, "back_left_drive");
         frontRightDrive = hardwareMap.get(DcMotor.class, "front_right_drive");
         backRightDrive = hardwareMap.get(DcMotor.class, "back_right_drive");
-        inTake = hardwareMap.get(DcMotor.class, "in_take");
-        boolean intakeToggle = false;
+        lift1 = hardwareMap.get(DcMotor.class, "lift_one");
+        rightOutTake = hardwareMap.get(DcMotor.class, "right_outtake");
+        leftOutTake = hardwareMap.get(DcMotor.class, "left_outtake");
+        lift2 = hardwareMap.get(DcMotor.class, "lift_two");
+        kicker = hardwareMap.get(CRServo.class, "kicker");
+        intake = hardwareMap.get(CRServo.class, "intake");
+
+
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -100,15 +114,16 @@ public class OpMode_Linear extends LinearOpMode {
         // when you first test your robot, push the left joystick forward and observe the direction the wheels turn.
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
-        frontLeftDrive.setDirection(DcMotor.Direction.FORWARD);
+        frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
         backLeftDrive.setDirection(DcMotor.Direction.REVERSE);
         frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
         backRightDrive.setDirection(DcMotor.Direction.FORWARD);
-
+        rightOutTake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftOutTake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
-
+        double out_speed = 0.4;
         waitForStart();
         runtime.reset();
 
@@ -120,6 +135,8 @@ public class OpMode_Linear extends LinearOpMode {
             double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
             double lateral =  -gamepad1.left_stick_x;
             double yaw     =  gamepad1.right_stick_x;
+            //this is is the code for the lifter but on joystick
+            double lift = -gamepad2.left_stick_y;
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
@@ -150,7 +167,9 @@ public class OpMode_Linear extends LinearOpMode {
             //   2) Then make sure they run in the correct direction by modifying the
             //      the setDirection() calls above.
             // Once the correct motors move in the correct direction re-comment this code.
-
+            if(out_speed==0){
+                out_speed=1;
+            }
             /*
             frontLeftPower  = gamepad1.x ? 1.0 : 0.0;  // X gamepad
             backLeftPower   = gamepad1.a ? 1.0 : 0.0;  // A gamepad
@@ -163,26 +182,59 @@ public class OpMode_Linear extends LinearOpMode {
             frontRightDrive.setPower(frontRightPower);
             backLeftDrive.setPower(backLeftPower);
             backRightDrive.setPower(backRightPower);
-
+           /* lift1.setPower(lift);
+            lift2.setPower(lift);*/
+            //if(gamepad1.xWasReleased()){
+            //    out_speed +=0.1;
+            //}
+            //if (gamepad1.yWasReleased()){
+            //    out_speed -=0.1;
+            //}
             //intake and outake contols
-            if(gamepad2.a){
+            /*if(gamepad2.aWasReleased()){
                 //frontLeftDrive.setPower(1);
-                inTake.setPower(1);
+                inTake.setPower(-1);
           //      if (
 
 
           //      )inTake.setPower(1);
         //        intakeToggle = !intakeToggle;
-            }else if(gamepad2.x){
-                inTake.setPower(-1);
             }else{
                 inTake.setPower(0);
+            }*/
+            //if(gamepad2.b){
+            //}
+            if(gamepad2.x){
+                lift1.setPower(-0.6);
+                lift2.setPower(0.6);
+                intake.setPower(-1);
+            }else{
+                lift1.setPower(0);
+                lift2.setPower(0);
+                intake.setPower(0);
             }
+            if (gamepad2.right_trigger > 0){
+                rightOutTake.setPower(-0.45);
+                leftOutTake.setPower(0.45);
+            }else{
+                rightOutTake.setPower(0);
+                leftOutTake.setPower(0);
+            }
+            if(gamepad2.left_trigger > 0){
+                kicker.setPower(-1);
+                lift1.setPower(-0.6);
+                lift2.setPower(0.6);
+            }
+            else
+                kicker.setPower(0);
+            //leftOutTake.setPower(1);
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Front left/Right", "%4.2f, %4.2f", frontLeftPower, frontRightPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", backLeftPower, backRightPower);
             telemetry.update();
+            }
         }
-    }}
+    }
+//}

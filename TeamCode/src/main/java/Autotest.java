@@ -44,7 +44,7 @@ public class Autotest extends LinearOpMode {
         waitForStart();
         //funny dave mode
         //drive(1000, -1000, .25);
-        drive(500, 500, .3);
+        drive(600, 600, .3);
     }
 
     private void drive(int lTar, int rTar, double speed) {
